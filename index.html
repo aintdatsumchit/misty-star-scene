@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Misty's Stars</title>
+
+<style>
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at 50% 45%,
+        #16091f 0%,
+        #090511 45%,
+        #020207 100%);
+}
+
+canvas {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+</style>
+</head>
+
+<body>
+<canvas id="sky"></canvas>
+
+<script>
+const canvas = document.getElementById("sky");
+const ctx = canvas.getContext("2d", { alpha: false });
+
+let w, h, dpr;
+let stars = [];
+let shooters = [];
+
+const COLORS = [
+    [255,255,255], // soft white
+    [205,190,255], // lavender
+    [164,205,255], // icy blue
+    [232,170,255], // violet
+    [255,150,205]  // romantic pink
+];
+
+function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    w = window.innerWidth;
+    h = window.innerHeight;
+
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+
+    makeStars();
+}
+
+function makeStars() {
+    stars = [];
+
+    const count = Math.min(
+        850,
+        Math.floor((w * h) / 1500)
+    );
+
+    for (let i = 0; i < count; i++) {
+        const color =
+            COLORS[Math.floor(Math.random() * COLORS.length)];
+
+        stars.push({
+            x: Math.random() * w,
+            y: Math.random() * h,
+            r: Math.random() * 1.25 + 0.25,
+            base: Math.random() * 0.55 + 0.30,
+            phase: Math.random() * Math.PI * 2,
+            speed: Math.random() * 0.0015 + 0.0004,
+            drift: Math.random() * 0.006 + 0.001,
+            color
+        });
+    }
+}
+
+function shootingStar() {
+    if (shooters.length > 1) return;
+
+    const startX = Math.random() * w * 0.75;
+    const startY = Math.random() * h * 0.40;
+
+    shooters.push({
+        x: startX,
+        y: startY,
+        vx: 4.5 + Math.random() * 2.5,
+        vy: 2.0 + Math.random() * 1.5,
+        life: 1,
+        length: 90 + Math.random() * 90
+    });
+}
+
+let last = performance.now();
+let nextShooter = performance.now() + 5000;
+
+function draw(now) {
+
+    const dt = Math.min(now - last, 40);
+    last = now;
+
+    // Deep purple-black romantic sky
+    const bg = ctx.createRadialGradient(
+        w * .5, h * .45, 0,
+        w * .5, h * .45, Math.max(w,h) * .75
+    );
+
+    bg.addColorStop(0, "#16091f");
+    bg.addColorStop(.48, "#090511");
+    bg.addColorStop(1, "#020207");
+
+    ctx.fillStyle = bg;
+    ctx.fillRect(0,0,w,h);
+
+    // Stars
+    for (const s of stars) {
+
+        s.phase += s.speed * dt;
+        s.x += s.drift * dt;
+
+        if (s.x > w + 5) s.x = -5;
+
+        const twinkle =
+            s.base +
+            Math.sin(s.phase) * 0.22;
+
+        const alpha =
+            Math.max(.12, Math.min(.95, twinkle));
+
+        const [r,g,b] = s.color;
+
+        // Soft halo on selected stars
+        if (s.r > .9) {
+            ctx.beginPath();
+            ctx.fillStyle =
+                `rgba(${r},${g},${b},${alpha * .12})`;
+
+            ctx.arc(
+                s.x,
+                s.y,
+                s.r * 5,
+                0,
+                Math.PI * 2
+            );
+
+            ctx.fill();
+        }
+
+        // Star center
+        ctx.beginPath();
+
+        ctx.fillStyle =
+            `rgba(${r},${g},${b},${alpha})`;
+
+        ctx.arc(
+            s.x,
+            s.y,
+            s.r,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+    }
+
+    // Shooting stars
+    for (let i = shooters.length - 1; i >= 0; i--) {
+
+        const s = shooters[i];
+
+        const mag =
+            Math.sqrt(s.vx*s.vx + s.vy*s.vy);
+
+        const tx =
+            s.x - (s.vx/mag) * s.length;
+
+        const ty =
+            s.y - (s.vy/mag) * s.length;
+
+        const grad =
+            ctx.createLinearGradient(
+                tx,ty,s.x,s.y
+            );
+
+        grad.addColorStop(
+            0,
+            "rgba(180,130,255,0)"
+        );
+
+        grad.addColorStop(
+            .55,
+            `rgba(215,175,255,${s.life * .25})`
+        );
+
+        grad.addColorStop(
+            1,
+            `rgba(255,225,255,${s.life})`
+        );
+
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = 1.5;
+
+        ctx.beginPath();
+        ctx.moveTo(tx,ty);
+        ctx.lineTo(s.x,s.y);
+        ctx.stroke();
+
+        s.x += s.vx * dt * .06;
+        s.y += s.vy * dt * .06;
+
+        s.life -= dt * .0007;
+
+        if (s.life <= 0) {
+            shooters.splice(i,1);
+        }
+    }
+
+    if (now > nextShooter) {
+        shootingStar();
+
+        // Random: roughly every 6–13 seconds
+        nextShooter =
+            now + 6000 + Math.random() * 7000;
+    }
+
+    requestAnimationFrame(draw);
+}
+
+window.addEventListener("resize", resize);
+
+resize();
+requestAnimationFrame(draw);
+</script>
+</body>
+</html>
