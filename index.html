@@ -34,19 +34,11 @@ canvas {
 const canvas = document.getElementById("sky");
 const ctx = canvas.getContext("2d", { alpha: false });
 
-let w;
-let h;
-let dpr;
-
+let w, h, dpr;
 let stars = [];
-let shooters = [];
+let meteors = [];
 
-
-/* =========================================
-   MISTY STAR COLORS
-========================================= */
-
-const COLORS = [
+const STAR_COLORS = [
     [255,255,255],
     [225,195,255],
     [145,190,255],
@@ -57,17 +49,12 @@ const COLORS = [
     [175,115,255]
 ];
 
-
-/* =========================================
-   SHOOTING STAR COLORS
-========================================= */
-
-const SHOOTER_COLORS = [
-    [255,245,255],
-    [225,180,255],
-    [255,130,220],
-    [145,190,255],
-    [100,225,255]
+const METEOR_COLORS = [
+    [255,255,255],
+    [230,190,255],
+    [255,120,220],
+    [130,200,255],
+    [100,235,255]
 ];
 
 
@@ -77,10 +64,7 @@ const SHOOTER_COLORS = [
 
 function resize() {
 
-    dpr = Math.min(
-        window.devicePixelRatio || 1,
-        1.5
-    );
+    dpr = Math.min(window.devicePixelRatio || 1, 1.5);
 
     w = window.innerWidth;
     h = window.innerHeight;
@@ -88,18 +72,14 @@ function resize() {
     canvas.width = w * dpr;
     canvas.height = h * dpr;
 
-    ctx.setTransform(
-        dpr, 0,
-        0, dpr,
-        0, 0
-    );
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     makeStars();
 }
 
 
 /* =========================================
-   CREATE BACKGROUND STARS
+   BACKGROUND STARS
 ========================================= */
 
 function makeStars() {
@@ -114,32 +94,18 @@ function makeStars() {
     for (let i = 0; i < count; i++) {
 
         const color =
-            COLORS[
-                Math.floor(
-                    Math.random() * COLORS.length
-                )
+            STAR_COLORS[
+                Math.floor(Math.random() * STAR_COLORS.length)
             ];
 
         stars.push({
-
             x: Math.random() * w,
             y: Math.random() * h,
-
-            r:
-                Math.random() * 1.45 + 0.35,
-
-            base:
-                Math.random() * 0.42 + 0.50,
-
-            phase:
-                Math.random() * Math.PI * 2,
-
-            speed:
-                Math.random() * 0.0011 + 0.0003,
-
-            drift:
-                Math.random() * 0.0035 + 0.0007,
-
+            r: Math.random() * 1.45 + 0.35,
+            base: Math.random() * 0.42 + 0.50,
+            phase: Math.random() * Math.PI * 2,
+            speed: Math.random() * 0.0011 + 0.0003,
+            drift: Math.random() * 0.0035 + 0.0007,
             color
         });
     }
@@ -147,43 +113,44 @@ function makeStars() {
 
 
 /* =========================================
-   CREATE SHOOTING STAR
+   CREATE METEOR
 ========================================= */
 
-function shootingStar(delayX = 0, delayY = 0) {
+function createMeteor(offset = 0) {
 
-    if (shooters.length >= 8) return;
+    if (meteors.length >= 10) return;
 
     const color =
-        SHOOTER_COLORS[
-            Math.floor(
-                Math.random() *
-                SHOOTER_COLORS.length
-            )
+        METEOR_COLORS[
+            Math.floor(Math.random() * METEOR_COLORS.length)
         ];
 
-    shooters.push({
+    /*
+       Meteor begins slightly off the
+       LEFT side of the screen.
 
-        x:
-            Math.random() * w * 0.68 + delayX,
+       This guarantees that it travels
+       visibly across the scene.
+    */
+
+    meteors.push({
+
+        x: -150 - offset,
 
         y:
-            Math.random() * h * 0.42 + delayY,
+            h * (0.08 + Math.random() * 0.48),
 
-        vx:
-            3.0 + Math.random() * 2.3,
+        speed:
+            650 + Math.random() * 350,
 
-        vy:
-            1.1 + Math.random() * 1.3,
-
-        life:
-            0.90 + Math.random() * 0.25,
+        slope:
+            0.30 + Math.random() * 0.18,
 
         length:
-            100 + Math.random() * 180,
+            180 + Math.random() * 180,
 
         width:
-            1.4 + Math.random() * 1.3,
+            2.5 + Math.random() * 2.5,
 
         color
     });
@@ -203,10 +170,7 @@ function meteorBurst() {
 
         setTimeout(() => {
 
-            shootingStar(
-                Math.random() * 80,
-                Math.random() * 45
-            );
+            createMeteor(i * 100);
 
         }, i * 180);
     }
@@ -214,32 +178,32 @@ function meteorBurst() {
 
 
 let last = performance.now();
-
-let nextShooter =
-    performance.now() + 900;
+let nextMeteor = performance.now() + 700;
 
 
 /* =========================================
-   MAIN ANIMATION
+   MAIN DRAW LOOP
 ========================================= */
 
 function draw(now) {
 
     const dt =
-        Math.min(now - last, 40);
+        Math.min(now - last, 40) / 1000;
 
     last = now;
 
 
     /* =====================================
-       DARK ROMANTIC BASE
+       DARK ROMANTIC BACKGROUND
     ===================================== */
 
     ctx.fillStyle = "#070512";
 
     ctx.fillRect(
-        0, 0,
-        w, h
+        0,
+        0,
+        w,
+        h
     );
 
 
@@ -247,9 +211,7 @@ function draw(now) {
        COLORFUL NEBULA
     ===================================== */
 
-    const t =
-        now * 0.000035;
-
+    const t = now * 0.000035;
 
     const bands = [
 
@@ -349,20 +311,24 @@ function draw(now) {
         ctx.fillStyle = glow;
 
         ctx.fillRect(
-            0, 0,
-            w, h
+            0,
+            0,
+            w,
+            h
         );
     }
 
 
     /* =====================================
-       DEEP PURPLE VEIL
+       DARK PURPLE VEIL
     ===================================== */
 
     const veil =
         ctx.createLinearGradient(
-            0, 0,
-            0, h
+            0,
+            0,
+            0,
+            h
         );
 
     veil.addColorStop(
@@ -383,8 +349,10 @@ function draw(now) {
     ctx.fillStyle = veil;
 
     ctx.fillRect(
-        0, 0,
-        w, h
+        0,
+        0,
+        w,
+        h
     );
 
 
@@ -395,10 +363,10 @@ function draw(now) {
     for (const s of stars) {
 
         s.phase +=
-            s.speed * dt;
+            s.speed * dt * 1000;
 
         s.x +=
-            s.drift * dt;
+            s.drift * dt * 1000;
 
 
         if (s.x > w + 8) {
@@ -414,18 +382,14 @@ function draw(now) {
         const alpha =
             Math.max(
                 0.32,
-                Math.min(
-                    1,
-                    twinkle
-                )
+                Math.min(1, twinkle)
             );
 
 
-        const [r,g,b] =
-            s.color;
+        const [r,g,b] = s.color;
 
 
-        /* SOFT GLOW */
+        /* STAR GLOW */
 
         if (s.r > 0.9) {
 
@@ -446,7 +410,7 @@ function draw(now) {
         }
 
 
-        /* STAR CENTER */
+        /* STAR */
 
         ctx.beginPath();
 
@@ -464,7 +428,7 @@ function draw(now) {
         ctx.fill();
 
 
-        /* DIAMOND SPARKLE */
+        /* DIAMOND TWINKLE */
 
         if (
             s.r > 1.45 &&
@@ -504,76 +468,82 @@ function draw(now) {
 
 
     /* =====================================
-       METEOR SHOWER
+       BIG BRIGHT METEORS
     ===================================== */
 
     for (
-        let i = shooters.length - 1;
+        let i = meteors.length - 1;
         i >= 0;
         i--
     ) {
 
-        const s = shooters[i];
+        const m = meteors[i];
 
-        const [r,g,b] = s.color;
+        const [r,g,b] = m.color;
 
+
+        /*
+           Direction vector
+        */
+
+        const dx = 1;
+        const dy = m.slope;
 
         const magnitude =
             Math.sqrt(
-                s.vx * s.vx +
-                s.vy * s.vy
+                dx * dx +
+                dy * dy
             );
 
 
-        const tailX =
-            s.x -
-            (s.vx / magnitude) *
-            s.length;
+        const ux = dx / magnitude;
+        const uy = dy / magnitude;
 
+
+        /*
+           Tail location
+        */
+
+        const tailX =
+            m.x -
+            ux * m.length;
 
         const tailY =
-            s.y -
-            (s.vy / magnitude) *
-            s.length;
+            m.y -
+            uy * m.length;
 
 
-        const trail =
+        /* =================================
+           HUGE OUTER GLOW
+        ================================= */
+
+        const outerTrail =
             ctx.createLinearGradient(
                 tailX,
                 tailY,
-                s.x,
-                s.y
+                m.x,
+                m.y
             );
 
-
-        trail.addColorStop(
+        outerTrail.addColorStop(
             0,
             `rgba(${r},${g},${b},0)`
         );
 
-
-        trail.addColorStop(
-            0.45,
-            `rgba(${r},${g},${b},${s.life * 0.28})`
+        outerTrail.addColorStop(
+            0.55,
+            `rgba(${r},${g},${b},0.10)`
         );
 
-
-        trail.addColorStop(
-            0.78,
-            `rgba(${r},${g},${b},${s.life * 0.72})`
-        );
-
-
-        trail.addColorStop(
+        outerTrail.addColorStop(
             1,
-            `rgba(255,250,255,${s.life})`
+            `rgba(${r},${g},${b},0.50)`
         );
 
+        ctx.strokeStyle = outerTrail;
 
-        ctx.strokeStyle = trail;
-
-        ctx.lineWidth = s.width;
-
+        ctx.lineWidth =
+            m.width * 4;
 
         ctx.beginPath();
 
@@ -583,24 +553,103 @@ function draw(now) {
         );
 
         ctx.lineTo(
-            s.x,
-            s.y
+            m.x,
+            m.y
         );
 
         ctx.stroke();
 
 
-        /* SHOOTING STAR GLOW */
+        /* =================================
+           BRIGHT METEOR TRAIL
+        ================================= */
+
+        const trail =
+            ctx.createLinearGradient(
+                tailX,
+                tailY,
+                m.x,
+                m.y
+            );
+
+        trail.addColorStop(
+            0,
+            `rgba(${r},${g},${b},0)`
+        );
+
+        trail.addColorStop(
+            0.35,
+            `rgba(${r},${g},${b},0.25)`
+        );
+
+        trail.addColorStop(
+            0.70,
+            `rgba(${r},${g},${b},0.75)`
+        );
+
+        trail.addColorStop(
+            1,
+            "rgba(255,255,255,1)"
+        );
+
+
+        ctx.strokeStyle = trail;
+
+        ctx.lineWidth =
+            m.width;
 
         ctx.beginPath();
 
-        ctx.fillStyle =
-            `rgba(${r},${g},${b},${s.life * 0.18})`;
+        ctx.moveTo(
+            tailX,
+            tailY
+        );
+
+        ctx.lineTo(
+            m.x,
+            m.y
+        );
+
+        ctx.stroke();
+
+
+        /* =================================
+           METEOR HEAD GLOW
+        ================================= */
+
+        const headGlow =
+            ctx.createRadialGradient(
+                m.x,
+                m.y,
+                0,
+                m.x,
+                m.y,
+                18
+            );
+
+        headGlow.addColorStop(
+            0,
+            "rgba(255,255,255,1)"
+        );
+
+        headGlow.addColorStop(
+            0.20,
+            `rgba(${r},${g},${b},0.90)`
+        );
+
+        headGlow.addColorStop(
+            1,
+            `rgba(${r},${g},${b},0)`
+        );
+
+        ctx.fillStyle = headGlow;
+
+        ctx.beginPath();
 
         ctx.arc(
-            s.x,
-            s.y,
-            8,
+            m.x,
+            m.y,
+            18,
             0,
             Math.PI * 2
         );
@@ -608,17 +657,19 @@ function draw(now) {
         ctx.fill();
 
 
-        /* SHOOTING STAR HEAD */
+        /* =================================
+           BRIGHT WHITE CORE
+        ================================= */
+
+        ctx.fillStyle =
+            "rgba(255,255,255,1)";
 
         ctx.beginPath();
 
-        ctx.fillStyle =
-            `rgba(255,250,255,${s.life})`;
-
         ctx.arc(
-            s.x,
-            s.y,
-            2.2,
+            m.x,
+            m.y,
+            3.5,
             0,
             Math.PI * 2
         );
@@ -626,24 +677,31 @@ function draw(now) {
         ctx.fill();
 
 
-        /* MOVE */
+        /* =================================
+           MOVE METEOR ACROSS SCREEN
+        ================================= */
 
-        s.x +=
-            s.vx * dt * 0.055;
+        const move =
+            m.speed * dt;
 
-        s.y +=
-            s.vy * dt * 0.055;
+        m.x +=
+            ux * move;
 
-
-        /* FADE */
-
-        s.life -=
-            dt * 0.00058;
+        m.y +=
+            uy * move;
 
 
-        if (s.life <= 0) {
+        /*
+           Remove only AFTER meteor
+           completely crosses the screen.
+        */
 
-            shooters.splice(
+        if (
+            m.x > w + m.length ||
+            m.y > h + m.length
+        ) {
+
+            meteors.splice(
                 i,
                 1
             );
@@ -652,29 +710,29 @@ function draw(now) {
 
 
     /* =====================================
-       FIRE THE NEXT METEOR
+       METEOR SHOWER TIMER
 
-       Every 0.7 - 1.8 seconds.
+       One roughly every 0.7 - 1.5 sec.
 
-       Sometimes fires a 2-3 star burst.
+       40% chance of a 2-3 meteor burst.
     ===================================== */
 
-    if (now > nextShooter) {
+    if (now > nextMeteor) {
 
-        if (Math.random() < 0.32) {
+        if (Math.random() < 0.40) {
 
             meteorBurst();
 
         } else {
 
-            shootingStar();
+            createMeteor();
         }
 
 
-        nextShooter =
+        nextMeteor =
             now +
             700 +
-            Math.random() * 1100;
+            Math.random() * 800;
     }
 
 
@@ -683,7 +741,7 @@ function draw(now) {
 
 
 /* =========================================
-   START THE SKY
+   START
 ========================================= */
 
 window.addEventListener(
