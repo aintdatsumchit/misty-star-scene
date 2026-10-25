@@ -47,14 +47,27 @@ let shooters = [];
 ========================================= */
 
 const COLORS = [
-    [255,255,255], // diamond white
-    [225,195,255], // lavender
-    [145,190,255], // electric blue
-    [90,225,255],  // cyan
-    [215,120,255], // violet
-    [255,85,215],  // magenta
-    [255,120,180], // rose pink
-    [175,115,255]  // deep purple
+    [255,255,255],
+    [225,195,255],
+    [145,190,255],
+    [90,225,255],
+    [215,120,255],
+    [255,85,215],
+    [255,120,180],
+    [175,115,255]
+];
+
+
+/* =========================================
+   SHOOTING STAR COLORS
+========================================= */
+
+const SHOOTER_COLORS = [
+    [255,245,255],
+    [225,180,255],
+    [255,130,220],
+    [145,190,255],
+    [100,225,255]
 ];
 
 
@@ -86,7 +99,7 @@ function resize() {
 
 
 /* =========================================
-   CREATE STARS
+   CREATE BACKGROUND STARS
 ========================================= */
 
 function makeStars() {
@@ -137,37 +150,73 @@ function makeStars() {
    CREATE SHOOTING STAR
 ========================================= */
 
-function shootingStar() {
+function shootingStar(delayX = 0, delayY = 0) {
 
-    // Allow several shooting stars at once
-    if (shooters.length >= 5) return;
+    if (shooters.length >= 8) return;
+
+    const color =
+        SHOOTER_COLORS[
+            Math.floor(
+                Math.random() *
+                SHOOTER_COLORS.length
+            )
+        ];
 
     shooters.push({
 
         x:
-            Math.random() * w * 0.72,
+            Math.random() * w * 0.68 + delayX,
 
         y:
-            Math.random() * h * 0.42,
+            Math.random() * h * 0.42 + delayY,
 
         vx:
-            3.2 + Math.random() * 1.7,
+            3.0 + Math.random() * 2.3,
 
         vy:
-            1.3 + Math.random() * 0.9,
+            1.1 + Math.random() * 1.3,
 
-        life: 1,
+        life:
+            0.90 + Math.random() * 0.25,
 
         length:
-            120 + Math.random() * 130
+            100 + Math.random() * 180,
+
+        width:
+            1.4 + Math.random() * 1.3,
+
+        color
     });
+}
+
+
+/* =========================================
+   METEOR BURST
+========================================= */
+
+function meteorBurst() {
+
+    const amount =
+        2 + Math.floor(Math.random() * 2);
+
+    for (let i = 0; i < amount; i++) {
+
+        setTimeout(() => {
+
+            shootingStar(
+                Math.random() * 80,
+                Math.random() * 45
+            );
+
+        }, i * 180);
+    }
 }
 
 
 let last = performance.now();
 
 let nextShooter =
-    performance.now() + 1800;
+    performance.now() + 900;
 
 
 /* =========================================
@@ -195,7 +244,7 @@ function draw(now) {
 
 
     /* =====================================
-       COLORFUL NEBULA ATMOSPHERE
+       COLORFUL NEBULA
     ===================================== */
 
     const t =
@@ -376,7 +425,7 @@ function draw(now) {
             s.color;
 
 
-        /* Soft colored glow */
+        /* SOFT GLOW */
 
         if (s.r > 0.9) {
 
@@ -397,7 +446,7 @@ function draw(now) {
         }
 
 
-        /* Bright center */
+        /* STAR CENTER */
 
         ctx.beginPath();
 
@@ -415,7 +464,7 @@ function draw(now) {
         ctx.fill();
 
 
-        /* Diamond sparkle */
+        /* DIAMOND SPARKLE */
 
         if (
             s.r > 1.45 &&
@@ -455,7 +504,7 @@ function draw(now) {
 
 
     /* =====================================
-       SHOOTING STARS
+       METEOR SHOWER
     ===================================== */
 
     for (
@@ -464,8 +513,9 @@ function draw(now) {
         i--
     ) {
 
-        const s =
-            shooters[i];
+        const s = shooters[i];
+
+        const [r,g,b] = s.color;
 
 
         const magnitude =
@@ -498,33 +548,31 @@ function draw(now) {
 
         trail.addColorStop(
             0,
-            "rgba(125,90,255,0)"
+            `rgba(${r},${g},${b},0)`
         );
 
 
         trail.addColorStop(
             0.45,
-            `rgba(180,125,255,${s.life * 0.30})`
+            `rgba(${r},${g},${b},${s.life * 0.28})`
         );
 
 
         trail.addColorStop(
             0.78,
-            `rgba(255,115,220,${s.life * 0.72})`
+            `rgba(${r},${g},${b},${s.life * 0.72})`
         );
 
 
         trail.addColorStop(
             1,
-            `rgba(255,245,255,${s.life})`
+            `rgba(255,250,255,${s.life})`
         );
 
 
-        ctx.strokeStyle =
-            trail;
+        ctx.strokeStyle = trail;
 
-        ctx.lineWidth =
-            2.0;
+        ctx.lineWidth = s.width;
 
 
         ctx.beginPath();
@@ -542,17 +590,17 @@ function draw(now) {
         ctx.stroke();
 
 
-        /* Bright shooting-star head */
+        /* SHOOTING STAR GLOW */
 
         ctx.beginPath();
 
         ctx.fillStyle =
-            `rgba(255,245,255,${s.life})`;
+            `rgba(${r},${g},${b},${s.life * 0.18})`;
 
         ctx.arc(
             s.x,
             s.y,
-            2.1,
+            8,
             0,
             Math.PI * 2
         );
@@ -560,19 +608,37 @@ function draw(now) {
         ctx.fill();
 
 
-        /* Move shooting star */
+        /* SHOOTING STAR HEAD */
+
+        ctx.beginPath();
+
+        ctx.fillStyle =
+            `rgba(255,250,255,${s.life})`;
+
+        ctx.arc(
+            s.x,
+            s.y,
+            2.2,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+
+
+        /* MOVE */
 
         s.x +=
-            s.vx * dt * 0.05;
+            s.vx * dt * 0.055;
 
         s.y +=
-            s.vy * dt * 0.05;
+            s.vy * dt * 0.055;
 
 
-        /* Fade slowly */
+        /* FADE */
 
         s.life -=
-            dt * 0.00065;
+            dt * 0.00058;
 
 
         if (s.life <= 0) {
@@ -586,19 +652,29 @@ function draw(now) {
 
 
     /* =====================================
-       LOTS MORE SHOOTING STARS
+       FIRE THE NEXT METEOR
 
-       Roughly every 1.8 - 4.3 seconds
+       Every 0.7 - 1.8 seconds.
+
+       Sometimes fires a 2-3 star burst.
     ===================================== */
 
     if (now > nextShooter) {
 
-        shootingStar();
+        if (Math.random() < 0.32) {
+
+            meteorBurst();
+
+        } else {
+
+            shootingStar();
+        }
+
 
         nextShooter =
             now +
-            1800 +
-            Math.random() * 2500;
+            700 +
+            Math.random() * 1100;
     }
 
 
@@ -607,7 +683,7 @@ function draw(now) {
 
 
 /* =========================================
-   START
+   START THE SKY
 ========================================= */
 
 window.addEventListener(
