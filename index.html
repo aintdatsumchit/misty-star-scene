@@ -113,60 +113,53 @@ function draw(now) {
     last = now;
 
     // Deep purple-black romantic sky
-    const bg = ctx.createRadialGradient(
-        w * .5, h * .45, 0,
-        w * .5, h * .45, Math.max(w,h) * .75
-    );
-
-bg.addColorStop(0, "#281044");
-bg.addColorStop(.32, "#160b35");
-bg.addColorStop(.65, "#07162f");
-bg.addColorStop(1, "#02030d");
-
-    ctx.fillStyle = bg;
-    ctx.fillRect(0,0,w,h);
+ // Uniform cosmic base for seamless multi-panel display
+ctx.fillStyle = "#21104a";
+ctx.fillRect(0, 0, w, h);
 // Soft colorful nebula atmosphere
-const t = now * 0.00005;
+// Seam-friendly colorful atmosphere
+const t = now * 0.00004;
 
-const clouds = [
+// Broad horizontal bands extend beyond the canvas edges.
+// This keeps neighboring media panels much closer in color.
+const bands = [
     {
-        x: w * (0.25 + Math.sin(t) * 0.08),
-        y: h * (0.30 + Math.cos(t * 0.7) * 0.08),
-        radius: Math.max(w,h) * 0.48,
-        color: "rgba(180,45,255,0.30)"
+        y: h * (0.18 + Math.sin(t) * 0.04),
+        radius: h * 0.75,
+        color: "rgba(210,55,255,0.30)"
     },
     {
-        x: w * (0.72 + Math.cos(t * 0.8) * 0.07),
-        y: h * (0.38 + Math.sin(t) * 0.08),
-        radius: Math.max(w,h) * 0.43,
-        color: "rgba(255,45,170,0.25)"
+        y: h * (0.48 + Math.cos(t * 0.8) * 0.04),
+        radius: h * 0.80,
+        color: "rgba(255,45,165,0.22)"
     },
     {
-        x: w * (0.48 + Math.sin(t * 0.6) * 0.10),
-        y: h * (0.72 + Math.cos(t) * 0.06),
-        radius: Math.max(w,h) * 0.46,
-        color: "rgba(25,120,255,0.28)"
+        y: h * (0.72 + Math.sin(t * 0.6) * 0.04),
+        radius: h * 0.85,
+        color: "rgba(35,125,255,0.30)"
     },
     {
-        x: w * (0.82 + Math.sin(t * 0.9) * 0.05),
-        y: h * 0.78,
-        radius: Math.max(w,h) * 0.34,
-        color: "rgba(20,220,255,0.18)"
+        y: h * (0.92 + Math.cos(t * 0.7) * 0.03),
+        radius: h * 0.65,
+        color: "rgba(20,210,255,0.18)"
     }
 ];
 
-for (const cloud of clouds) {
-    const glow = ctx.createRadialGradient(
-        cloud.x, cloud.y, 0,
-        cloud.x, cloud.y, cloud.radius
+for (const band of bands) {
+    const glow = ctx.createLinearGradient(
+        0,
+        band.y - band.radius,
+        0,
+        band.y + band.radius
     );
 
-    glow.addColorStop(0, cloud.color);
-    glow.addColorStop(0.45, cloud.color);
+    glow.addColorStop(0, "rgba(0,0,0,0)");
+    glow.addColorStop(0.5, band.color);
     glow.addColorStop(1, "rgba(0,0,0,0)");
 
     ctx.fillStyle = glow;
     ctx.fillRect(0, 0, w, h);
+}
 }
     // Stars
     for (const s of stars) {
