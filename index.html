@@ -40,11 +40,14 @@ let stars = [];
 let shooters = [];
 
 const COLORS = [
-    [255,255,255], // soft white
-    [205,190,255], // lavender
-    [164,205,255], // icy blue
-    [232,170,255], // violet
-    [255,150,205]  // romantic pink
+    [255,255,255], // diamond white
+    [190,155,255], // vivid lavender
+    [125,175,255], // electric blue
+    [95,220,255],  // cyan glow
+    [205,105,255], // rich violet
+    [255,90,210],  // hot magenta
+    [255,125,175], // romantic rose
+    [155,105,255]  // deep purple
 ];
 
 function resize() {
@@ -115,9 +118,10 @@ function draw(now) {
         w * .5, h * .45, Math.max(w,h) * .75
     );
 
-    bg.addColorStop(0, "#16091f");
-    bg.addColorStop(.48, "#090511");
-    bg.addColorStop(1, "#020207");
+bg.addColorStop(0, "#281044");
+bg.addColorStop(.32, "#160b35");
+bg.addColorStop(.65, "#07162f");
+bg.addColorStop(1, "#02030d");
 
     ctx.fillStyle = bg;
     ctx.fillRect(0,0,w,h);
@@ -143,12 +147,12 @@ function draw(now) {
         if (s.r > .9) {
             ctx.beginPath();
             ctx.fillStyle =
-                `rgba(${r},${g},${b},${alpha * .12})`;
+                `rgba(${r},${g},${b},${alpha * .20})`;
 
             ctx.arc(
                 s.x,
                 s.y,
-                s.r * 5,
+                s.r * 8,
                 0,
                 Math.PI * 2
             );
